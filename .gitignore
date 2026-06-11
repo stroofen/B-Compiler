@@ -1,0 +1,34 @@
+# Build objects
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.exe
+*.out
+
+# Debug / symbol files
+*.pdb
+*.idb
+*.ilk
+*.dSYM/
+
+# Build folders
+build/
+bin/
+obj/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Other
+tests/
+examples/*.asm
