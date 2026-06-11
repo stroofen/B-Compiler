@@ -1,7 +1,7 @@
 ## Compiler for the B programming language
 
-### Tribute to the legend 👑 Ken Thompson 👑
-
+### Tribute to the legend 👑 Ken Thompson 👑 - creator of B, Unix, UTF-8 and more
+![The man himself](https://github.com/user-attachments/assets/26c216c2-cf8f-4ce2-bca8-c992b52e73be)
 
 ### Features
 - ELF32/64 + Win32/64 support
