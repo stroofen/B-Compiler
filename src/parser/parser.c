@@ -854,11 +854,13 @@ ast_node_t* parsePrimary(parser_t* p) {
 // variable     :   name [ ival (',' ival)* ] ';'
 // function     :   name '(' [namelist] ')' statement
 static ast_node_t* parseDefinition(parser_t* p) {
-    fprintf(stdout, "parseDefinition: curType=%s curText=%s line=%d\n",
-        getTokenName(curType(p)),
-        curText(p),
-        curLine(p)
-    );
+    if(p->ctx->flags.verbose) {    
+        fprintf(stdout, "parseDefinition: curType=%s curText=%s line=%d\n",
+            getTokenName(curType(p)),
+            curText(p),
+            curLine(p)
+        );
+    }
 
     int32_t line = curLine(p);
     int32_t col = curCol(p);
@@ -1007,16 +1009,6 @@ static ast_node_t* parseDefinition(parser_t* p) {
     }
 
     // Optional initializer list:
-    /*
-    while(curType(p) != TOK_Semicolon && curType(p) != TOK_Eof) {
-        ast_node_t* expr = parseExpr(p);
-        nodeAddChild(var, expr);
-        if(curType(p) == TOK_Comma) {
-            token_t temp = advance(p);
-            freeToken(&temp);
-        }
-    }
-    */
     while(curType(p) != TOK_Semicolon && curType(p) != TOK_Eof) {
         ast_node_t* ival = parsePrimary(p);
         nodeAddChild(var, ival);

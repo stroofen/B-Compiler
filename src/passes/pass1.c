@@ -44,10 +44,13 @@ static void symbolPreVisit(ast_node_t* node, void* ctx) {
             break;
         }
         case AST_AutoDecl: {
-            fprintf(stdout, "AST_AutoDecl: current=%p global=%p numChildren=%u\n",
-                (void*)table->current,
-                (void*)table->global,
-                node->numChildren);
+                if(compiler->flags.verbose) {
+                    fprintf(stdout, "AST_AutoDecl: current=%p global=%p numChildren=%u\n",
+                        (void*)table->current,
+                        (void*)table->global,
+                        node->numChildren
+                    );
+                }
             for(uint32_t i = 0u; i < node->numChildren; ++i) {
                 ast_node_t* var = node->children[i];
                 insertSymbol(table->current, var->text, table->nextOffset, SYM_Local);
@@ -67,11 +70,15 @@ static void symbolPreVisit(ast_node_t* node, void* ctx) {
             for(uint32_t i = 0u; i < node->numChildren; ++i) {
                 ast_node_t* child = node->children[i];
                 symbol_t* existing = lookupSymbol(table->global, child->text);
-                fprintf(stdout, "ExtrnDecl: '%s' existing=%p type=%d\n",
-                    child->text,
-                    (void*)existing,
-                    existing ? existing->type : -1
-                );
+
+                if(compiler->flags.verbose) {
+                    fprintf(stdout, "ExtrnDecl: '%s' existing=%p type=%d\n",
+                        child->text,
+                        (void*)existing,
+                        existing ? existing->type : -1
+                    );
+                }
+
                 if(existing == NULL) {
                     insertSymbol(table->global, child->text, 0, SYM_Extern);
                 }
@@ -89,11 +96,17 @@ static void symbolPostVisit(ast_node_t* node, void* ctx) {
     if(node->type != AST_FuncDef) {
         return;
     }
-    fprintf(stdout, "symbolPostVisit: before pop current=%p global=%p\n",
-        (void*)table->current, (void*)table->global);
-    table->current = scopePop(table->current);
-    fprintf(stdout, "symbolPostVisit: after pop current=%p\n",
-        (void*)table->current);
+
+    
+    if(((pass_context_t*)ctx)->ctx->flags.verbose) {
+        fprintf(stdout, "symbolPostVisit: before pop current=%p global=%p\n",
+            (void*)table->current, (void*)table->global
+        );
+        table->current = scopePop(table->current);
+        fprintf(stdout, "symbolPostVisit: after pop current=%p\n",
+            (void*)table->current
+        );
+    }
 }
 
 // Symbol table pass: Collects globals, assigns stack offsets
@@ -125,10 +138,14 @@ symbol_table_t* pass1(ast_node_t* root, compiler_context_t* ctx) {
     // Pre-register top-level defs
     for(uint32_t i = 0u; i < root->numChildren; ++i) {
         ast_node_t* node = root->children[i];
-        fprintf(stdout, "pre-reg[%u]: type=%s text=%s\n",
-            i, getAstTypeName(node->type),
-            node->text ? node->text : "<null>"
-        );
+
+        if(ctx->flags.verbose) {
+            fprintf(stdout, "pre-reg[%u]: type=%s text=%s\n",
+                i, getAstTypeName(node->type),
+                node->text ? node->text : "<null>"
+            );
+        }
+
         if(node->type == AST_FuncDef) {
             insertSymbol(table->global, node->text, 0, SYM_Function);
         } else if(node->type == AST_VarDef) {
@@ -145,10 +162,11 @@ symbol_table_t* pass1(ast_node_t* root, compiler_context_t* ctx) {
             __COMPONENT__,
             table
         );
-    }
-    fprintf(stdout, "pass1 done: current=%p global=%p\n",
+        
+        fprintf(stdout, "pass1 done: current=%p global=%p\n",
         (void*)table->current, (void*)table->global
     );
+    }
     return table;
 }
 

@@ -9,6 +9,12 @@
 - Abstract syntax tree (AST) creation
 - Intermediate language (IL) emission
 - Several compiler flags (read flags section)
+- Recursive directory search for easy multi-file compilations
+
+## Requirements
+- Make (for building)
+- GCC (for assembling)
+- NASM (for linking)
 
 ### Extensions
 *While the point of the language is to be extremely minimal, it does get a bit overkill due to the advancements of languages the past 56+ years. Hence, it was decided to extend the language to make it slightly more practical.*
@@ -62,7 +68,7 @@ fib(x) {
 ```
 
 ### Caveats / known issues
-- Compiler will blindly process syntactically invalid code (such as prefix ++/-- operations) without giving a parsing error
+- Compiler will blindly process syntactically invalid code (such as unary ++/-- operations) without giving a parsing error
 - There is no standard library (yet?), instead C interop is upheld by violating some of B's rules (strings are byte arrays and not word arrays)
 - Very lightly tested in Windows, not at all tested on Linux
 - Errors may break any further compilation, this can be handled by setting the max error flag to 1

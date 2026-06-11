@@ -158,12 +158,14 @@ void emitInstr(
     emit_state_t* state,
     FILE* out
 ) {
-    fprintf(
-        stdout,
-        "emitInstr: op=%d dst=%d src1=%d src2=%d label=%s\n",
-        inst->op, inst->dst, inst->src1, inst->src2,
-        inst->label ? inst->label : "<null>"
-    );
+    if(ctx->flags.verbose) {
+        fprintf(
+            stdout,
+            "emitInstr: op=%d dst=%d src1=%d src2=%d label=%s\n",
+            inst->op, inst->dst, inst->src1, inst->src2,
+            inst->label ? inst->label : "<null>"
+        );
+    }
 
     static char const* const sInstAdd = "add";
     static char const* const sInstSub = "sub";
@@ -376,42 +378,6 @@ void emitInstr(
             break;
         }
         case IR_Call: {
-            /*
-            uint32_t const numArgRegs = ctx->target.numArgRegisters;
-            uint32_t const paramBase = index - inst->numArgs;
-
-            // Shadow space (Windows ABI support)
-            //if(ctx->target.shadowSpace > 0u) {
-            //    fprintf(out, "    sub %s, %u\n", regs->sp, ctx->target.shadowSpace);
-            //}
-
-            // Walk instrs to find previous IR_Param inst
-            for(uint32_t i = 0u; i < inst->numArgs && i < numArgRegs; ++i) {
-                ir_inst_t const* param = &instrs[paramBase + i];
-                fprintf(out, "    mov %s, [%s%+d]\n", ctx->target.argRegisters[i], regs->bp, tempSlot(param->src1));
-            }
-            // Overflowing args (> numArgRegs) go onto stack (right to left)
-            if(inst->numArgs > numArgRegs) {
-                for(uint32_t i = inst->numArgs - 1u; i >= numArgRegs; --i) {
-                    ir_inst_t const* param = &instrs[paramBase + i];
-                    fprintf(out, "    mov %s, [%s%+d]\n", regs->ax, regs->bp, tempSlot(param->src1));
-                    fprintf(out, "    push %s\n", regs->ax);
-                }
-            }
-
-            fprintf(out, "    call %s\n", inst->label);
-            fprintf(out, "    mov [%s%+d], %s\n", regs->bp, tempSlot(inst->dst), regs->ax);
-
-            // Clean any args that were pushed onto the stack
-            uint32_t stackClean = 0;//ctx->target.shadowSpace
-            if (inst->numArgs > numArgRegs) {
-                // Compute full param size on stack and add it all at once
-                stackClean += (inst->numArgs - numArgRegs) * getWordSize(ctx);
-            }
-            if (stackClean > 0u) {
-                fprintf(out, "    add %s, %u\n", regs->sp, stackClean);
-            }
-            */
            uint32_t const numArgRegs = ctx->target.numArgRegisters;
     
             // collect IR_Param instructions by scanning backwards

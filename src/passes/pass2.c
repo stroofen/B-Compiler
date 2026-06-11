@@ -93,7 +93,9 @@ ir_inst_t* emit(ir_context_t* ctx, ir_op_t op) {
     return inst;
 }
 int32_t newTemp(ir_context_t* ctx) {
-    fprintf(stdout, "newTemp: %d\n", ctx->nextTemp);
+    if(ctx->ctx->flags.verbose) {
+        fprintf(stdout, "newTemp: %d\n", ctx->nextTemp);
+    }
     return ctx->nextTemp++;
 }
 int32_t newLabel(ir_context_t* ctx) {
@@ -128,7 +130,10 @@ static ir_op_t unaryOpToIR(char const* const opStr) {
 }
 
 void lowerStmt(ir_context_t* ctx, ast_node_t* node) {
-    fprintf(stderr, "lowerStmt(): ctx->table->current = %p\n", ctx->table->current);
+    if(ctx->ctx->flags.verbose) {
+        fprintf(stderr, "lowerStmt(): ctx->table->current = %p\n", ctx->table->current);
+    }
+
     if(!node) {
         return;
     }
@@ -215,24 +220,34 @@ void lowerStmt(ir_context_t* ctx, ast_node_t* node) {
             lbl->label = strdup(node->text);
             // update scope
             symbol_t* funcSym = lookupSymbol(ctx->table->global, node->text);
-            fprintf(stdout, "lowerStmt FuncDef: '%s' funcSym=%p scope=%p current before=%p\n",
-                node->text,
-                (void*)funcSym,
-                funcSym ? (void*)funcSym->scope : NULL,
-                (void*)ctx->table->current
-            );
-            fprintf(stdout, "pass2 FuncDef '%s': funcSym=%p scope=%p\n",
-                node->text, (void*)funcSym, funcSym ? (void*)funcSym->scope : NULL
-            );
+
+            if(ctx->ctx->flags.verbose) {
+
+                fprintf(stdout, "lowerStmt FuncDef: '%s' funcSym=%p scope=%p current before=%p\n",
+                    node->text,
+                    (void*)funcSym,
+                    funcSym ? (void*)funcSym->scope : NULL,
+                    (void*)ctx->table->current
+                );
+                fprintf(stdout, "pass2 FuncDef '%s': funcSym=%p scope=%p\n",
+                    node->text, (void*)funcSym, funcSym ? (void*)funcSym->scope : NULL
+                );
+
+            }
 
             if(funcSym && funcSym->scope) {
                 scope_t* s = funcSym->scope;
                 while(s != NULL) {
-                    fprintf(stdout, "  scope=%p numSymbols=%u parent=%p\n",
-                        (void*)s, s->numSymbols, (void*)s->parent);
-                    for(uint32_t i = 0u; i < s->numSymbols; ++i) {
-                        fprintf(stdout, "    [%u] name=%s offset=%d\n",
-                            i, s->symbols[i].name, s->symbols[i].offset);
+                    
+                    if(ctx->ctx->flags.verbose) {
+                        fprintf(stdout, "  scope=%p numSymbols=%u parent=%p\n",
+                            (void*)s, s->numSymbols, (void*)s->parent
+                        );
+                        for(uint32_t i = 0u; i < s->numSymbols; ++i) {
+                            fprintf(stdout, "    [%u] name=%s offset=%d\n",
+                                i, s->symbols[i].name, s->symbols[i].offset
+                            );
+                        }
                     }
                     s = s->parent;
                 }
@@ -241,9 +256,13 @@ void lowerStmt(ir_context_t* ctx, ast_node_t* node) {
             if(funcSym != NULL && funcSym->scope != NULL) {
                 ctx->table->current = funcSym->scope;
             }
-            fprintf(stdout, "lowerStmt FuncDef: current after=%p\n",
-                (void*)ctx->table->current
-            );
+
+            if(ctx->ctx->flags.verbose) {
+                fprintf(stdout, "lowerStmt FuncDef: current after=%p\n",
+                    (void*)ctx->table->current
+                );
+            }
+
             // body
             lowerStmt(ctx, node->left);
             // emit return if not already done
@@ -275,8 +294,10 @@ int32_t lowerExpr(ir_context_t* ctx, ast_node_t* node) {
         return -1;
     }
 
-    fprintf(stderr, "lowerExp() - node %p, \"%s\" of type \"%s\"\n", node, node->text, getAstTypeName(node->type));
-    fprintf(stderr, "lowerExpr(): ctx->table->current = %p\n", ctx->table->current);
+    if(ctx->ctx->flags.verbose) {
+        fprintf(stderr, "lowerExp() - node %p, \"%s\" of type \"%s\"\n", node, node->text, getAstTypeName(node->type));
+        fprintf(stderr, "lowerExpr(): ctx->table->current = %p\n", ctx->table->current);
+    }
 
     switch(node->type) {
         case AST_Number: {
@@ -294,12 +315,16 @@ int32_t lowerExpr(ir_context_t* ctx, ast_node_t* node) {
             return dst;
         }
         case AST_Identifier: {
-            fprintf(stdout, "ctx=%p\n", (void*)ctx);
-            if(ctx && ctx->table) {
-                fprintf(stdout, "table=%p\n", (void*)ctx->table);
-                fprintf(stdout, "current=%p\n", (void*)ctx->table->current);
+
+            if(ctx->ctx->flags.verbose) {
+                fprintf(stdout, "ctx=%p\n", (void*)ctx);
+                if(ctx && ctx->table) {
+                    fprintf(stdout, "table=%p\n", (void*)ctx->table);
+                    fprintf(stdout, "current=%p\n", (void*)ctx->table->current);
+                }
+                fprintf(stdout, "node->text=%p '%s'\n", (void*)node->text, node->text ? node->text : "<null>");
             }
-            fprintf(stdout, "node->text=%p '%s'\n", (void*)node->text, node->text ? node->text : "<null>");
+
             symbol_t* sym = lookupSymbol(ctx->table->current, node->text);
             int32_t dst = newTemp(ctx);
             if (!sym || sym->type == SYM_Extern || sym->type == SYM_Function) {
@@ -356,12 +381,16 @@ int32_t lowerExpr(ir_context_t* ctx, ast_node_t* node) {
             } else {
                 // simple variable
                 symbol_t* sym = lookupSymbol(ctx->table->current, node->left->text);
-                fprintf(stdout, "assign lvalue '%s': sym=%p type=%d offset=%d\n",
-                    node->left->text,
-                    (void*)sym,
-                    sym ? (int32_t)sym->type : -1,
-                    sym ? sym->offset : 0
-                );
+
+                if(ctx->ctx->flags.verbose) {
+                    fprintf(stdout, "assign lvalue '%s': sym=%p type=%d offset=%d\n",
+                        node->left->text,
+                        (void*)sym,
+                        sym ? (int32_t)sym->type : -1,
+                        sym ? sym->offset : 0
+                    );
+                }
+                
                 if(sym == NULL) {
                     addError(
                         ctx->ctx,
